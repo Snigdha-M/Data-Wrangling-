@@ -1,0 +1,754 @@
+---
+title: "Data Wrangling (Data Preprocessing)"
+author: "Snigdha Mathur and Astha Bathla"
+subtitle: Practical Assessment 2
+date: ""
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+---
+
+## **Setup**
+
+```{r message=FALSE}
+
+# Load the necessary packages required to reproduce the report
+library(kableExtra)
+library(knitr)
+library(magrittr)
+library(dplyr)
+library(readr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+
+```
+
+
+## **Student names, numbers and percentage of contributions**
+```{r results='asis', echo=FALSE}
+
+na<- c(" Snigdha Mathur"," Astha Bathla")
+no<- c(" S4017572"," S3999096")
+pc<- c(" 50"," 50")
+
+s<- data.frame(cbind(na,no,pc))
+colnames(s)<- c("Student name", "Student number", "Percentage of contribution")
+
+s %>% kbl(caption = "Group information") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+\pagebreak
+
+## **Executive Summary**
+
+The preprocessing of the Movies and Box Office dataset concentrated on enhancing data quality for  analyses. Our approach centered on cleansing, transforming, standardizing, and restructuring the data to address potential inaccuracies and ensure compliance with tidy data principles.
+
+* Data Inspection and Cleaning:
+We started with a thorough examination of the dataset to correct discrepancies in data types and formats. Missing values in crucial columns like "Director" and "Original Language" were imputed using the mode, while numeric gaps were filled using the median to mitigate outlier impacts.
+
+* Data Tidying:
+Initial assessments revealed untidy aspects, particularly in the "Genre", "Release Date" and "Cast" columns, which contained multiple data points per cell. These were separated into distinct columns, aligning each variable with a single column as per tidy data principles.
+
+* Outlier Detection and Handling:
+Outliers were identified using the Interquartile Range (IQR). Significant outliers, particularly in "Box Office Collection," were noted for their extreme values. These outliers were capped at calculated thresholds, preserving data integrity while reducing skew.
+
+* Normalization and Data Transformation:
+To address the skewed distribution in financial figures, a logarithmic transformation was applied to "Box Office Collection." This step normalized the distribution, making the variable normally distributed
+
+* Visualization:
+Box plots for all numeric variables confirmed the effectiveness of our data transformation and outlier management strategies, showing improved uniformity across key metrics.
+
+Through these steps, the dataset has been cleaned, is more consistent, and structured, ensuring it is well-prepared for detailed analysis.
+
+
+## **Data**
+
+The datasets selected for detailed analysis in this report are titled 'Movies_dataset' and 'Box Office Collections'. The datasets are stored in CSV format  and imported using read_csv function in R coding.
+
+Both datasets have been sourced from Kaggle, an open source website that provides access to a wide range of datasets for various types of analysis. The datasets used are available at the following URLs:  
+
+
+1. IMDB Top Rated Movies Dataset: https://www.kaggle.com/datasets/shubhammaindola/tmdb-top-rated-movies-dataset  
+
+IMDb, the Internet Movie Database, is an online resource that stores and ranks the movies, television shows, and celebrities worldwide. The IMDB Top Rated Movie dataset features a dataset of over 9000 top-rated movies, which includes detailed attributes like title, release date, and genre.
+
+
+2. Box Office Collections Dataset: https://www.kaggle.com/datasets/anotherbadcode/boxofficecollections 
+
+The box office collection dataset provides information on the total earnings each movie has made in theaters. Variables like IMDb rating, runtime in minutes, and Metascore are included to help describe and differentiate each movie. These metrics can influence a movie's total earnings by affecting its appeal and perceived quality to audiences and critics.
+
+Importing the datasets : 
+```{r}
+movie_dataset <- read_csv("movie_dataset.csv")
+head(movie_dataset)
+
+```
+ 
+*Movies dataset * : The dataset comprises of 9335 rows spread across 9 columnns. The columns are defined below : <br> 
+
+  * ID : A unique identifier assigned to each movie in the dataset.
+    Type : Numeric
+    
+  * Title : The official title of the movie.
+    Type : Character
+    
+  * Release Date : The official release date of the movie.
+    Type : Date (formatted as YYYY/MM/DD).
+    
+  * Genre : The genre or genres associated with the movie, such as Action, Comedy, Thriller, etc
+    Type : Character
+    
+  * Original Language : The language in which the movie was originally produced
+    Type : Character 
+    
+  * Overview :A brief description or synopsis of the movie's plot
+    Type : Character
+    
+  * Popularity : A metric that quantifies the popularity of the movie, often based on various factors like viewership, internet searches, and social media mentions.
+    Type : Numeric
+    
+  * Vote count :The total number of votes that the movie received.
+    Type : Numeric 
+    
+  * Vote Average :The average rating out of 10 given to the movie by viewers.
+    Type : Numeric
+  
+
+```{r}
+box_office_collections <- read_csv("BoxOfficeCollections.csv")
+head(box_office_collections)
+
+```
+ 
+ *Box Office Collection dataset * : The dataset comprises of 1378 rows spread across 13 columnns. The columns are defined below : <br> 
+
+  * Movie : The title of the movie.
+    Type : Character
+    
+  * Year : The year the movie was released.
+    Type : Numeric
+    
+  * Adjusted Score: A score that adjusts the movie’s performance or rating for 
+  inflation or other factors over time.
+    Type : Numeric
+    
+  * Director : The director of the movie.
+    Type : Character
+    
+  * Cast :The main cast involved in the movie.
+    Type : Character
+    
+  * Consensus : A general agreement or opinion about the movie
+    Type : Character
+    
+  * Box Office Collection: The total revenue a movie generated at the box office.
+    Type : Numeric 
+    
+  * Imdb genre : The genre or genres of the movie as categorized by IMDb.
+    Type : Character
+    
+  * IMDB Rating : The rating given to the movie on IMDb, typically on a scale from 1 to 10.
+    Type : Numeric
+    
+  * Metascore : An aggregated score from various critics, provided by Metacritic.
+    Type : Numeric 
+    
+  * Time Minute : The runtime of the movie in minutes.
+    Type : Numeric
+    
+  * Votes : The total number of votes the movie received on IMDb.
+    Type : Numeric  
+
+
+```{r}
+# Merge the datasets using an inner join
+# The inner join as movies found in both datasets are included in final dataset
+combined_movies <- inner_join(movie_dataset, 
+                            box_office_collections, by = c("title" = "Movie"))
+
+# Show the first few rows of the joined dataset to verify successful merge
+head(combined_movies)
+# 
+```
+
+**EXPLANATION**
+
+*Data Merging:*
+
+The datasets are merged using inner_join() from the dplyr package. This function is chosen because it merges rows from both the datasets based on matching values in the specified columns. In this case, movies that appear in both datasets are retained.
+The by argument specifies the columns used to match rows between datasets (title from movie_dataset and Movie from box_office_collections), ensuring accurate alignment based on movie titles.
+
+
+*Insights* 
+The joined dataset has 1138 observations spread across 21 variables. The joined dataset comprises of a comprehensive set of variables that combine financial, critical, and demographic data about each movie. The dataset contains complex variables such as date/time fields (e.g., release_date) and string variables (e.g., overview, genres, Director, Cast).
+
+
+ **Understand** 
+
+To properly understand the structure of the merged dataset, we will perform an inspection of the joined dataset by looking at the structure for clarifying the types of data present within each column. This will help in identifying any data type mismatches. Following this identification, necessary data type conversions will be undertaken to ensure uniformity across the dataset. 
+
+
+```{r}
+# Detailed inspection of the data structure and variable types
+glimpse(combined_movies)
+
+# Dropping the repetitive columns (movie genre, release date and votes) 
+combined_movies <- select(combined_movies, -Imdb_genre, -Year, -Votes)
+
+
+# Converting 'original_language' to factor and label it
+combined_movies$original_language <- factor(combined_movies$original_language,
+                              levels = c("en", "it", "fr", "de", "es", "other"),
+                              labels = c("English", "Italian", "French", 
+                                         "German", "Spanish", "Other"))
+
+
+# Converting the variable Genre to a factor
+combined_movies$genres <- as.factor(combined_movies$genres)
+
+# Showing the first few rows of the updated dataset
+head(combined_movies)
+
+```
+
+**EXPLANATION** 
+glimpse() function was used for displaying the few intial vaules of the combined_dataset as str() function was providing a lengthy structure of the dataset making the structure output go past the page formatting. 
+
+*Factorizing Genres:*  After merging the datasets, the genres column is converted to a factor using as.factor() function in R. <br>
+
+*Labeling Original Language:* The original_language column is first converted to a factor with factor(). The levels argument specifies the unique language codes expected in the dataset. The languages are factorised as following : 
+  * en - English
+  * it - Italian
+  * fr - French
+  * de - German
+  * es - Spanish
+  * other - Other
+
+
+##	**Tidy & Manipulate Data I **
+
+Upon checking the structure view of the joined dataset, we proceed to evaluate the datatsets adherence to the principles of tidiness, as stipulated by the "Tidy Data Principle." This principle dictates that: <br>
+1. Each variable must have its own column. <br>
+2. Each observation must have its own row. <br>
+3. Each value must have its own cell. <br>
+
+**Checking combined_movies dataset for tidyness** <br>
+
+In the merged dataset obtained from "movies.csv" and "box office collection," we observe several columns and variables that do not conform to tidy data principles.
+
+* The "Genre" column currently includes multiple genres (such as Comedy, Horror, Drama, etc.) listed together within single entries. To adhere to the principles of tidy data, which states that each variable to form one column and each observation to form a distinct row, we will separate these entries. We will decompose the "Genre" column into individual genre entries, ensuring that each genre is represented distinctly and aligns with the tidy data framework.
+
+* The "Year" column is presently formatted as YYYY-MM-DD, capturing the full release date in a single column. To enhance data granularity and utility, we will split this column into three new columns: "Year," "Month," and "Date," each storing respective components of the release dates. T
+
+* The "Cast" column includes names of cast members concatenated within a single row. To align with tidy data principles, we will employ the separate_rows function to split these names into separate rows. This restructuring will allow each cast member’s name to occupy a unique row under the same movie, enhancing the dataset’s structure for more detailed relational analyses.
+
+
+
+```{r}
+# Split the 'genres' column into multiple rows
+movies_tidy <- combined_movies %>%
+  separate_rows(genres, sep = ",")
+
+
+# Spliting the Release Date column into Year , Month and Day
+movies_tidy <- movies_tidy %>% separate(release_date, 
+                                  into = c("Year", "Month", "Day"), sep = "-")
+
+# Splitting the columns Cast so that each cast member name is stored in different rows 
+movies_tidy <- movies_tidy %>% separate_rows(Cast, sep = ",")
+
+# Removing duplicate rows that may have occurred due to multiple entries
+movies_tidy <- movies_tidy %>% 
+  distinct()
+
+
+print("Tidy Dataset")
+glimpse(movies_tidy)
+
+```
+
+To adhere to tidy data principles, we have employed the separate_rows() and separate() functions. These functions have been utilized to systematically divide the "Genre," "Release Date," and "Cast" columns within the dataset. This restructuring ensures that each genre entry, release date component, and cast member is distinctly separated into individual rows and columns.
+
+## **Tidy & Manipulate Data II** 
+
+To enhance the tidiness of the dataset further, we will perform manipulations to create a new column from an existing one. This step is designed to improve the comprehensibility of the dataset, making it easier to understand and analyze. By creating this new column, we aim to refine the dataset’s structure and enhance its utility for more detailed examinations and insights.
+
+We aim to create 3 new variable column : 
+1. Popularity_category 
+2. Decade 
+3. Genre count data 
+
+```{r}
+# Creating a popularity category for the movies based on the popularity scores
+movies_tidy <- movies_tidy %>%
+  mutate(popularity_category = case_when(
+    popularity > 80 ~ "High",
+    popularity > 40 ~ "Medium",
+    TRUE ~ "Low"
+  ))
+
+# Adding a decade category for the release year
+movies_tidy <- movies_tidy %>%
+  mutate(decade = cut(as.numeric(Year), 
+                      breaks = c(1950, 1960, 1970, 1980, 
+                                 1990, 2000, 2010, 2020), 
+                      labels = c("1950s", "1960s", "1970s", 
+                                 "1980s", "1990s", "2000s","2010s")))
+
+# Count the number of genres per movie and add it as a new column
+# Requires regrouping data to count genres 
+genre_count_data <- movies_tidy %>%
+  group_by(title) %>%
+  summarise(genre_count = n())
+
+#Joining the genre_count_data varible to the tidy dataset using left join
+movies_tidy <- left_join(movies_tidy, genre_count_data, by = "title")
+
+# Display the updated dataset structure and content
+print("Updated Dataset with New Variables:")
+glimpse(movies_tidy)
+
+```
+
+**EXPLANATION**
+
+*1. Popularity Category Creation: *
+
+A new variable popularity_category is created using mutate() and case_when() from the dplyr library. This categorizes movies based on their popularity scores into high, medium, or low categories, which can be helpful for segmenting the data for analysis. <br>
+
+*2. Decade Category Addition: *
+
+Another new variable decade is added, categorizing release_year into decades. This is done using the cut() function to bin release_year into decade intervals. 
+
+
+*3. Genre Count Calculation: *
+
+The dataset is grouped by title using group_by() and the number of genres per movie is counted using summarise() and n(). This count is then joined back to the main dataset with left_join(), adding a genre_count variable. This provides insights into the diversity of genres per movie.
+
+
+##	**Scan I **
+
+***Checking for missing values***
+
+The subsequent phase of our process focuses on data cleaning. This stage involves examining the dataset for any missing values and appropriately replacing them through imputation. To systematically identify and quantify missing data, we will develop a function named missing_values. This function will be designed to process the entire dataset and return a count of missing entries, represented as NA or NULL values. This method ensures a thorough and uniform approach to detecting gaps in the data, allowing for precise corrective measures to maintain the integrity and utility of our dataset. 
+ 
+  
+For numeric variables, we primarily utilize the mean or median imputation methods. This approach involves replacing missing values with the mean or median of the available data points within the same variable, depending on the distribution and presence of outliers. 
+
+For categorical variables, the mode imputation method is employed. This method involves substituting missing entries with the mode, which is the most frequently occurring category within the dataset for the specific variable. This technique is particularly effective for categorical data as it maintains the integrity of the data distribution and ensures consistency in the categorical levels.
+```{r}
+
+# Creating a function missing_values for scanning for missing values across all variables
+
+missing_values <- sapply(movies_tidy, function(x) sum(is.na(x)))
+print("Missing Values in Each Column:")
+print(missing_values)
+```
+
+The result shows that there are multiple missing values in the dataset. 
+
+1. 2174 missing values in Box office Collection 
+
+2. 604 missing values in Original language column 
+
+3. 12 missing values in Director column 
+
+4. 799 missing values in Decade column 
+
+Now we shall perform numerical and categorical imputation on the dataset. 
+
+```{r}
+
+# Handling missing values 
+# Impute missing values for numeric columns using median 
+
+# Identifying numeric columns in the dataset
+numeric_columns <- sapply(movies_tidy, is.numeric)
+
+# Imputing missing values in numeric columns with the median of each column
+movies_tidy[numeric_columns] <- lapply(movies_tidy[numeric_columns], function(x) 
+  {
+  ifelse(is.na(x), median(x, na.rm = TRUE), x)
+})
+
+
+# Function to calculate mode (most frequent element)
+calculate_mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+# Identify factor and character columns
+categorical_columns <- sapply(movies_tidy, function(x) 
+  is.factor(x) || is.character(x))
+
+# Imputing missing values in factor and character columns using the mode
+movies_tidy[categorical_columns] <- lapply(movies_tidy[categorical_columns], 
+                                         function(x) {
+  ifelse(is.na(x), calculate_mode(x), x)
+})
+
+
+# Checking for missing values -  ensure all missing values are imputed
+missing_values <- sapply(movies_tidy, function(x) sum(is.na(x)))
+print("Missing Values in Each Column:")
+print(missing_values)
+
+```
+*Results*
+The results now state that there are no missing values in the dataset. 
+ 
+*Explanation* 
+
+* sapply(movies_tidy, is.numeric): This function checks each column in movies_tidy for determining and identifying the numeric column 
+
+* lapply(movies_tidy[numeric_columns], function(x) ...): Applies the imputation function to each numeric column. The function replaces missing values in each column with the median of that column. 
+
+* calculate_mode: This custom function finds the most frequently occurring value (mode) in a column. 
+
+* sapply(movies_tidy, function(x) is.factor(x) || is.character(x)): Similar to the numeric columns, this function checks each column for a factor or character variable.
+
+***Checking for special values ***
+
+As part of further data cleaning, we will look for presence of special values in the dataset. Special values in a dataset are data points that, while not necessarily incorrect or missing, are unusual or noteworthy due to their nature or the impact they can have on data analysis and interpretation. 
+
+Special values in R are Inf ,-Inf and NAN values. We shall be checking for the presence of these values in the numeric columns of our dataset.
+ 
+```{r}
+
+# Check for NaN, Inf, and -Inf in numerical columns
+special_values <- movies_tidy %>%
+  summarise(
+    NaN_values_BoxOffice = sum(is.nan(`Box Office Collection`), na.rm = TRUE),
+    Inf_values_BoxOffice = sum(is.infinite(`Box Office Collection`), na.rm = TRUE),
+    NaN_values_Rating = sum(is.nan(`IMDB Rating`), na.rm = TRUE),
+    Inf_values_Rating = sum(is.infinite(`IMDB Rating`), na.rm = TRUE),
+    NaN_values_MScore = sum(is.nan(metascore), na.rm = TRUE),
+    Inf_values_MScore = sum(is.infinite(`metascore`), na.rm = TRUE),
+    NaN_values_Time = sum(is.nan(time_minute), na.rm = TRUE),
+    Inf_values_Time = sum(is.infinite(time_minute), na.rm = TRUE)
+  )
+
+print("Special Values in 'box_office':")
+print(special_values)
+```
+
+
+The analysis confirms that none of the numeric columns within the dataset contain either NaN or Inf values.
+
+***Checking for obvious errors***
+
+This analysis includes a check for negative values in the "Box Office Collection" variable. Negative values in this variable are not plausible, as they would erroneously suggest that a film incurred losses rather than earnings, which does not align with the typical operational definition of box office collections.
+
+```{r}
+
+# Identify and print the count of negative values in 'box_office_collections'
+errors <- movies_tidy %>%
+  summarise(negative_box_office = sum(`Box Office Collection` < 0, na.rm = TRUE),
+            negative_ratings = sum(`IMDB Rating`<0 , na.rm = TRUE), 
+            negative_vote= sum(vote_count < 0, na.rm = TRUE),
+            negative_mscore = sum(metascore <0 , na.rm = TRUE))
+print(errors)
+```
+
+The analysis of the tidy dataset confirms the absence of negative values within its numeric columns. This observation ensures the data's integrity for further statistical evaluations. 
+
+***Checking for inconsistencies*** 
+
+* Movies with Extremely Low Vote Counts: Examing films that exhibit unusually low voting figures less than 5 votes.
+
+* IMDB Ratings Outside the Standard Range of 0 to 10:cAny movie entries with IMDB ratings falling outside the conventional range from 0 to 10 will be flagged as special values. 
+
+* Extreme Metascores Beyond the Range of 0 to 100: Similarly, metascores that do not fall within the typical range of 0 to 100 will also be categorized as special values.
+
+```{r}
+
+# Check for zero or extremely low vote counts, which could indicate missingdata
+special_values <- movies_tidy %>%
+  summarise(
+    Low_Vote_Count = sum(vote_count <= 5, na.rm = TRUE),
+    
+    Unlikely_IMDB_Rating = sum('IMDB Rating' > 10 | 'IMDB Rating' < 0, 
+                           na.rm = TRUE), # IMDB ratings should be between 0-10
+    
+    Extreme_Metascore = sum(metascore > 100 | metascore < 0, 
+                          na.rm = TRUE) # Metascore should be between 0 and 100
+  )
+print(special_values)
+```
+
+
+In the analysis of the dataset, the findings reveal that there is a singular instance where the "IMDB Rating" does not adhere to the expected range of 0 to 10. This outlier necessitates the implementation of correction mechanisms to ensure data accuracy and reliability.
+
+To address this and other potential anomalies effectively, we will implement several targeted functions:
+
+Handling Low Vote Counts: For movies with exceptionally low vote counts, which may skew analyses related to popularity or engagement, we will replace these values with the median vote count from the dataset. This approach stabilizes the data by reducing the impact of abnormally low entries without removing valuable information. 
+
+Adjusting IMDB Ratings and Metascores:To ensure that all "IMDB Rating" and "Metascore" values fall within their respective acceptable ranges, we will employ the pmin and pmax functions. 
+
+```{r}
+# Adjusting special values
+
+# Replace zero 'vote_count' with the median of non-zero values
+median_vote_count <- median(movies_tidy$vote_count[movies_tidy$vote_count > 0], 
+                            na.rm = TRUE)
+movies_tidy$vote_count <- ifelse(movies_tidy$vote_count == 0, median_vote_count, 
+                               movies_tidy$vote_count)
+
+# Ensure IMDB Rating and Metascore are within expected ranges
+movies_tidy$`IMDB Rating` <- pmin(pmax(movies_tidy$`IMDB Rating`, 0), 10)
+movies_tidy$metascore <- pmin(pmax(movies_tidy$metascore, 0), 100)
+
+# Display the corrected dataset summary
+summary(movies_tidy)
+
+
+```
+
+
+**Summary of Key Variables**
+*1. Director, Cast, Consensus: *  Categorical data values have no missing values <br>
+
+*2. Box Office Collection: * This numeric field ranges from approximately 38,090 to about 2.798 billion, indicating a wide range of movie success.
+
+*3. IMDB Rating: * Ratings range from 2.1 to 9.0, with a median of 7.2 and a mean slightly lower at 7.088, indicating a somewhat left-skewed distribution (more high ratings).
+There's an unusually low rating observed (min. 2.1), which might be a point of interest
+
+*4. Metascore: * Scores range from 9 to 100, with both mean (68.1) and median (69) suggesting a moderate level of critical reception on average.
+The minimum score of 9 is notably low, indicating either outlier films or potential errors in data entry.
+
+*5. Time Minute:* Movie lengths vary from 15 minutes to 386 minutes. The mean (107.8 minutes) and median (105 minutes) are typical for feature films, but the max value (386 minutes) suggests inclusion of outlier content such as extended cuts
+
+
+**Special Values and Errors Check** 
+
+*1. Zero Vote Count:* <br>
+There are no entries with a zero vote count, which is good as it suggests that all listed movies have received at least some voter attention.
+
+*2.Unlikely IMDB Rating:* <br>
+There is 1 entry with an unlikely IMDB rating (outside the typical 0-10 scale). This needs to be corrected or removed from further analysis
+
+*3. Extreme Metascore: * <br>
+No entries with extreme metascores (outside the 0-100 range) were found, indicating that all scores are within a plausible range.
+
+
+##	**Scan II**
+
+The next step in analying the Movies dataset, we scan for outliers present in the numeric variable in the dataset.
+
+*Methodology*
+1. Identifying Outliers Using IQR (Interquartile Range):  The IQR is a commonly used measure of identifying the statistical dispersion and is used to find outliers. The calculations of IQR are as follows : 
+Q1 = 25% quantile 
+Q2 = 75% quantile 
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR <br>
+For each numeric variable, we calculate the IQR. The outliers of these numeric variables arethose points that fall below Q1 - 1.5* IQR or above Q3 + 1.5 * IQR 
+
+2. Visualization Using Boxplots: Boxplots visualise the data distribution in the dataset, highlighting the points that lie outside the whiskers as Outliers
+
+
+
+```{r}
+
+# Define a function to calculate IQR and identify outliers
+calculate_outliers <- function(data, column) {
+  Q1 <- quantile(data[[column]], 0.25, na.rm = TRUE)
+  Q3 <- quantile(data[[column]], 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  outliers <- data[[column]] < lower_bound | data[[column]] > upper_bound
+  list(lower_bound = lower_bound, upper_bound = upper_bound, 
+       outliers = sum(outliers))
+}
+
+# Apply the outlier detection on numeric columns
+numeric_columns <- c("Box Office Collection", "IMDB Rating", 
+                     "metascore", "time_minute")
+outlier_summary <- lapply(numeric_columns, function(col) 
+                            calculate_outliers(movies_tidy, col))
+names(outlier_summary) <- numeric_columns
+
+# Convert the list to a data frame for tabular presentation
+outlier_df <- do.call(rbind, lapply(names(outlier_summary), function(col) {
+  cbind(Variable = col, as.data.frame(t(unlist(outlier_summary[[col]]))))
+}))
+outlier_df
+
+```
+
+
+The outlier summary table provides a detailed enumeration of the number of outliers present in each numeric variable of the dataset. Notably, the "Box Office Collection" variable exhibits the highest incidence of outliers, with a total of 1,456 outliers identified. This is followed by the "Time Minute" variable, which reports approximately 860 outliers, bounded by lower and upper limits of 60.50 and 152.50, respectively. Additionally, the "IMDB Rating" and "Metascore" variables contain 564 and 476 outliers, respectively.
+
+
+For a visual representation of the distribution of numeric variables within the dataset, we will plot box plots, which are effective tools for identifying outliers and understanding the spread of data. To accomplish this, we utilize the ggplot2 library from the ggplot2 pakcage. The box plots are  generated using the geom_boxplot function. 
+```{r}
+for (col in numeric_columns) {
+  p <- ggplot(movies_tidy, aes(y = .data[[col]])) +
+    geom_boxplot() +
+    labs(title = paste("Boxplot of", col), x = NULL, y = col)
+  print(p)
+}
+
+```
+ 
+ 
+**INSIGHTS FROM THE BOX PLOTS**
+
+*1. Box Office Collection*
+This plot shows a large number of outliers above the upper whisker, indicating that several movies have earned significantly more than the general distribution. The distribution's main body is closer to the lower end, suggesting that most movies earn relatively low amounts, with a few exceptional blockbusters.
+
+*2. IMDB Rating*
+The IMDB Ratings are concentrated between approximately 5 to 9, with a few outliers below this range. The distribution seems fairly normal but skewed slightly towards higher ratings.
+
+*3. Metascore*
+The Metascore data has a concentration between roughly 40 to 80, with a few outliers mainly below the lower whisker. The spread is moderate without extreme outliers on the upper end.
+
+*4. Time Minute*
+The plot for film duration shows that most movies have a runtime clustered around 100 to 150 minutes, with several outliers indicating significantly longer movies.
+
+
+The analysis of the table and the box plot clearly indicates that the "Box Office Collection" variable is significantly skewed, characterized by a wide range of numerical values, which contributes to its high outlier count. In response to this skewness and to effectively address the presence of these outliers, subsequent steps will include the implementation of transformations on the "Box Office Collection" variable. This approach aims to normalize the data distribution, thereby mitigating the impact of outliers and enhancing the robustness of our analytical outcomes.
+
+
+##	**Transform **
+
+```{r plot-size3, fig.width=6, fig.height=4}
+# Check original distribution of 'Box Office Collection'
+ggplot(movies_tidy, aes(x = `Box Office Collection`)) +
+    geom_histogram(bins = 30) +
+    ggtitle("Histogram of Box Office Collection (Before Transformation)")
+
+
+# Apply a logarithmic transformation to deal with skewness
+movies_tidy$`Log Box Office Collection`<-log1p(movies_tidy$`Box Office Collection`)
+
+# Plot histogram of the transformed data
+ ggplot(movies_tidy, aes(x = `Log Box Office Collection`)) +
+    geom_histogram(bins = 30) +
+    ggtitle("Histogram of Box Office Collection (Log Transformed)")
+
+ 
+```
+
+
+**Analysis of the Pre-Transformation Histogram** <br>
+*Skewed Distribution: * The histogram illustrates a highly right-skewed distribution where the majority of movies have relatively low box office revenues, while a few movies have exceptionally high revenues. The data concentration is significantly dense at the lower end of the scale, tapering off quickly as values increase. <br> 
+
+*Skewness of Histogram: * The mean of the variable is significantly higher than the median, and the tail stretches towards the higher values (long tail). This indicates that while most movies do not achieve extremely high revenues, there are notable exceptions which are significant outliers pulling the mean upwards.<br>
+<br>
+
+Since the data is highly skewed, we shall seleect LOG TRANSFORMATION for the variable " Box Office Collection"  
+
+**Rationale for Log Transformation**
+
+Given the highly skewed nature of the "Box Office Collection" data:
+The logarithmic transformation aims to normalize the data distribution, making it more symmetrical and reducing the impact of extreme values.<br>
+As seen in the post-transformation histogram, the log transformation significantly improved the distribution's shape, making it more bell-shaped and centered. This modification aids in stabilizing variance and makes the data more suitable for other analyses.
+
+
+**Analysis of the Log-Transformed Histogram**<br> 
+
+*Distribution Shape: * The histogram shows a more bell-shaped distribution, which is a significant improvement over the likely right-skewed distribution seen before the transformation. This suggests that the logarithmic transformation has effectively normalized the data, reducing skewness.
+
+*Centering and Scaling:* The data values are now centered around a narrower range of values (approximately between 15 and 20 in log scale). This indicates that extreme values (very high box office collections) have been compressed, bringing them closer to the majority of the data. Such scaling makes the dataset more manageable and reduces the influence of outliers in statistical analyses.
+
+*Symmtery:* The transformation has likely improved the symmetry and normalized the distribution, which is advantageous for many statistical modeling techniques that assume data normality
+
+
+***Capping the other numeric columns***
+
+Due to the observed skewness in the distribution of the 'Box Office Collection' variable within the dataset, a logarithmic transformation was applied specifically to this variable. For the rest of the numeric variable : IMDB rating, Metascore and Time Minute, we shall apply the method of Capping also known as Winsorising. This method involves defining a cutoff point, typically 1.5 times the IQR above the third quartile and below the first quartile, and then replacing any values outside these bounds with the boundary values.
+
+
+```{r}
+
+# Function to cap outliers for multiple variables using the IQR method
+cap_outliers <- function(data, variable) {
+  for (variable in variable) {
+    Q1 <- quantile(data[[variable]], 0.25, na.rm = TRUE)
+    Q3 <- quantile(data[[variable]], 0.75, na.rm = TRUE)
+    
+    # Calculate the interquartile range (IQR)
+    IQR <- Q3 - Q1
+    
+    # Define upper and lower limits
+    upper_limit <- Q3 + 1.5 * IQR
+    lower_limit <- Q1 - 1.5 * IQR
+    
+    # Cap outliers
+    data <- data %>%
+      mutate("{variable}" := ifelse({{variable}} > upper_limit, upper_limit,
+                                ifelse({{variable}} < lower_limit, lower_limit,
+                                             {{variable}})))
+  }
+  return(data)
+}
+
+list_variable <- c("IMDB Rating","metascore", "time_minute")
+cap_outliers_movie_tidy <- cap_outliers(movies_tidy, list_variable)
+
+```
+
+The capping of numeric variables was performed so that the outliers can be removed from the numeric variables. The capping method helped in reducing the number of outliers in the dataset making the dataset cleaner and efficient for analysing. 
+
+
+```{r}
+# Histogrmas for the capped numeric variables
+hist(movies_tidy$`IMDB Rating`,
+     main = "Histogram of IMDB Rating",
+     xlab = "IMDB Rating")
+
+hist(movies_tidy$metascore,
+     main = "Histogram of Metascore",
+     xlab = "Metascore")
+
+hist(movies_tidy$time_minute,
+     main = "Histogram of Running Time",
+     xlab = "Running Time")
+```
+
+
+\pagebreak
+
+##	**References **
+1. Anotherbarcode (2022) *BoxOfficeCollections dataset*, Kaggle , accessed on 17th May 2024, https://www.kaggle.com/datasets/anotherbadcode/boxofficecollections
+
+2. Shubham Maindola (2024) *IMDB Top Rated Movies Dataset* , Kaggle, accessed on 17th May 2024, https://www.kaggle.com/datasets/shubhammaindola/tmdb-top-rated-movies-dataset
+
+3. Hadley Wickham (2022) *Data tidying* R for Data Science, accessed om 18th May 2024, https://r4ds.hadley.nz/data-tidy
+
+4. Arimoro Olayinka (2021) *A Gentle Introduction to Tidy Data in R* Medium, accessed on 20th May 2024, 
+https://arimoroolayinka.medium.com/a-gentle-introduction-to-tidy-data-in-r-b6673b4d304c
+
+5. Data Preprocessing (Data Wrangling) *Module 4 -Tidy Data Principles and Manipulating Data* accessed on 21st Maay 2024, 
+https://rare-phoenix-161610.appspot.com/secured/Module_04.html
+
+6.  Data Preprocessing (Data Wrangling) *Module 5 - Scan: Missing Values* accessed on 21st May 2024, 
+http://rare-phoenix-161610.appspot.com/secured/Module_05.html#Overview
+
+7. Data Preprocessing (Data Wrangling) *Module 6 - Scan: Outliers* accessed on 21st May 2024, 
+http://rare-phoenix-161610.appspot.com/secured/Module_06.html#Overview
+
+8.  Data Preprocessing (Data Wrangling) *Module 7 - Transform: Data Transformation, Standardisation, and Reduction* accessed on 21st May 2024, 
+http://rare-phoenix-161610.appspot.com/secured/Module_07.html#Overview
+
+9. R Bloggers (nd) *How to Remove Outliers in R* R Bloggers, accessed on 27th May 2024, 
+https://www.r-bloggers.com/2020/01/how-to-remove-outliers-in-r/
+
+10. Dplyr (nd) *Create, modify, and delete columns* dplyr, accessed on 26th May 2024, 
+https://dplyr.tidyverse.org/reference/mutate.html
+
+```{r}
+citation("dplyr")
+citation("ggplot2")
+citation("stringr")
+citation("tidyr")
+citation("readr")
+
+```
