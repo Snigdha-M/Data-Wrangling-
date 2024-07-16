@@ -1,4 +1,3 @@
-Executive Summary
 The preprocessing of the Movies and Box Office dataset concentrated on enhancing data quality for analyses. Our approach centered on cleansing, transforming, standardizing, and restructuring the data to address potential inaccuracies and ensure compliance with tidy data principles.
 • Data Inspection and Cleaning: We started with a thorough examination of the dataset to correct discrepancies in data types and formats. Missing values in crucial columns like “Director” and “Original Language” were imputed using the mode, while numeric gaps were filled using the median to mitigate outlier impacts.
 • Data Tidying: Initial assessments revealed untidy aspects, particularly in the “Genre”, “Release Date” and “Cast” columns, which contained multiple data points per cell. These were separated into distinct columns, aligning each variable with a single column as per tidy data principles.
