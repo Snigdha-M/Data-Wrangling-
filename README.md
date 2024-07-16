@@ -1,7 +1,11 @@
-The preprocessing of the Movies and Box Office dataset concentrated on enhancing data quality for analyses. Our approach centered on cleansing, transforming, standardizing, and restructuring the data to address potential inaccuracies and ensure compliance with tidy data principles.
-• Data Inspection and Cleaning: We started with a thorough examination of the dataset to correct discrepancies in data types and formats. Missing values in crucial columns like “Director” and “Original Language” were imputed using the mode, while numeric gaps were filled using the median to mitigate outlier impacts.
-• Data Tidying: Initial assessments revealed untidy aspects, particularly in the “Genre”, “Release Date” and “Cast” columns, which contained multiple data points per cell. These were separated into distinct columns, aligning each variable with a single column as per tidy data principles.
-• Outlier Detection and Handling: Outliers were identified using the Interquartile Range (IQR). Significant outliers, particularly in “Box Office Collection,” were noted for their extreme values. These outliers were capped at calculated thresholds, preserving data integrity while reducing skew.
-• Normalization and Data Transformation: To address the skewed distribution in financial figures, a logarithmic transformation was applied to “Box Office Collection.” This step normalized the distribution, making the variable normally distributed
-• Visualization: Box plots for all numeric variables confirmed the effectiveness of our data transformation and outlier management strategies, showing improved uniformity across key metrics.
-Through these steps, the dataset has been cleaned, is more consistent, and structured, ensuring it is well-prepared for detailed analysis.
+This repo contains all the projects and the reports undertaken during the course of Data Wrangling. 
+Throughout the course, R language was used to analyse and interpret the data and extract insights from it.
+
+The various topicd covered during the entire course are : 
+1. Data Preprocessing: From Raw Data to Ready to Analyse
+2. Get: Importing, Scraping and Exporting Data with R
+3. Understand: Understanding Data and Data Structures
+4. Tidy and Manipulate: Tidy Data Principles and Manipulating Data
+5. Scan: Outliers
+6. Transform: Data Transformation, Standardisation, and Reduction
+7. Special Operations: Dealing with date/time and character variables
