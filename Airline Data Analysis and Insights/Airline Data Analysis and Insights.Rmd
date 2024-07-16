@@ -1,0 +1,433 @@
+---
+title: "Data Wrangling (Data Preprocessing)" 
+author: "SNIGDHA MATHUR - S4017572"
+subtitle: Mid-term assessment 
+date: ""
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  html_notebook: default 
+---
+## **Introduction**
+
+The aim of this report is to create authentic, practical data that reflects the everyday data usage of a global brand network. We will focus our detailed analysis on Qantas Airlines—short for Queensland and Northern Territory Aerial Services—which is a prominent Australian carrier known for its extensive fleet, international routes, and reach within Australia and Oceania.
+
+To facilitate our analysis, we will produce synthetic datasets for Qantas Airlines. This will enable us to derive and present valuable insights based on the results obtained.
+
+Synthetic data generation is a process of creating data having the characterstics of the real life data. The synthetically generated datasets further help in scenario testing, development, and understand the trends without hampering the actual data points.
+
+The datasets generated are for the analysis are : 
+
+*Airline Data*: This dataset includes key elements such as flight numbers, types of aircraft and departure schedules among others. This information is crucial for simulating the logistical and operational aspects of the airline.\
+*Passenger Data*: This dataset provides  information on passengers traveling with Qantas Airlines, detailing demograohics, ticket class, and other relevant passenger-specific information.\
+*Customer Feedback*: This dataset gathers insights from passengers about their experiences with Qantas Airlines, which is essential for understanding customer satisfaction and areas of improvement. \
+
+
+## **Setup**
+
+```{r warning=FALSE,message=FALSE}
+# Load the necessary packages required to reproduce the report
+
+library(dplyr)        
+library(magrittr)     
+library(tidyr)  
+library(knitr)
+```
+
+Importing the necessary libraries for data manipulation and analysis. Libraries dpylr, magrittr and tidyr are all part of library - Tidyverse package. These are used for data manipulation , making the data more readble and extracting insights. \
+The library kinttr is used in R markdown file for creating a RMD file.
+
+## **Data generation**
+
+For generating synthetic dataset, we to specify a seed value for ensuring the reproducubility of the generated data. The seed value helps in maintaining the consistency of the data throughout. 
+
+```{r message=FALSE}
+
+# Setting a seed value 
+SEED <- 367
+set.seed(SEED) 
+```
+
+Seed value of 367 has been assigned. We now generate the datasets. The datasets will have variables of character and numeric data types ensuring that the data represents and replicates the original airline data. \
+
+AIRLINE DATSET 
+
+```{r message=FALSE}
+
+# Dataset 1 Generation
+
+airline_data <- data.frame(
+  FlightNumber = sprintf("QF%d", sample(100:999, 200, replace = TRUE)),
+  Destination = sample(c("Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Canberra", "Hobart", NA), 200, replace = TRUE, prob = c(0.1, 0.05, 0.2, 0.15, 0.05, 0.1,0.2,0.15)),
+  DepartureDate = sample(seq(as.Date('2020-01-01'), as.Date('2023-12-31'), by="day"), 
+                         200, replace = TRUE),
+  Duration = round(rnorm(200, mean = 15, sd = 5), digits = 2), 
+  Capacity = round(rnorm(200, 60, 10)),
+  AircraftType = sample(c("Boeing 737", "Airbus A320", "Boeing 787", "Airbus A330", NA), 200, replace = TRUE , prob = c(0.3, 0.4, 0.15, 0.05, 0.1))
+ )
+
+
+airline_data %<>% 
+  mutate(error = rnorm(n = 200, mean = 10, sd = 0.5))
+airline_data %<>% 
+  mutate(TicketPrice = ((Duration * 0.5) + 45 + error))
+
+
+print(head(airline_data))
+
+
+plot(x = airline_data$Duration, 
+     y = airline_data$TicketPrice, 
+     main = "Correlation between Duration and TicketPrice", 
+     xlab = "Duration (in Hrs) ", 
+     ylab = "Ticket Prices")
+
+
+```
+
+
+The airline dataset comprises 100 records, each detailing aspects of individual flights through 7 key variables: FlightNumber, Destination, DepartureDate, Capacity, Duration, AircraftType, and TicketPrice. TicketPrice is the variable here, influenced by Duration—the time span of the flight—based on the premise that longer flights generally result in higher costs and, consequently, pricier tickets, making Duration and Ticketprice correlate to eachother.\
+
+To dissect this relationship, an additional variable, Error, is introduced to fine-tune the correlation analysis between TicketPrice and Duration. The aim is to quantify and confirm the expected positive correlation where extended flight times correlate with increased ticket prices, reflecting the interplay between operational costs and pricing strategies. The outcome of this analysis will provide a clearer understanding of how flight durations impact ticket pricing, potentially guiding operational and strategic decision-making.\
+\
+\
+
+PASSENGER DATASET
+
+```{r}
+
+# Dataset 2 Generation
+
+
+passenger_data <- data.frame(
+  PassengerID = sprintf("%d", sample(100:999, 200, replace = TRUE)),
+  Age = sample(18:80, 200, replace = TRUE),
+  Gender = sample(c("Male", "Female", "Other"), 100, replace = TRUE, 
+                  prob = c(0.49, 0.49, 0.02)),
+  Nationality = sample(c("Australian", "American", "British", "Chinese", "Indian"), 
+                       200, replace = TRUE),
+  FlightNumber = sprintf("QF%d", sample(100:999, 200, replace = TRUE)),
+  TicketClass = sample(c("Economy", "Premium Economy", "Business", "First Class", NA), 
+                       200, replace = TRUE, prob = c(0.4, 0.3, 0.195, 0.1, 0.005))
+)
+
+
+passenger_data %<>% 
+  mutate(error2 = rnorm(n = 200, mean = 7, sd = 0.7))
+passenger_data %<>% 
+  mutate(TotalFlightsTaken = ((Age * 0.5)  / 2 + error2))
+
+
+plot(x = passenger_data$Age, 
+     y = passenger_data$TotalFlightsTaken, 
+     main = "Correlation between Age and Total Flight taken till date", 
+     xlab = "Age (in Yrs) ", 
+     ylab = "Total Number of flights travelled in")
+
+print(head(passenger_data))
+
+
+```
+
+The passenger dataset comprises 100 records, each containing seven specific attributes: PassengerID, Age, Gender, Nationality, Flight Number, Ticket Class, and the Number of Flights a passenger has taken to date. The variable 'error2' measures the relationship between a passenger's age and the total number of flights they have taken. The data suggests that younger individuals tend to have flown on fewer flights compared to older individuals, indicating a direct, positive relationship between age and flight frequency. This correlation is evidenced by a graph plotting 'Age' against 'Total Flights Taken,' affirming the observed trend between these two variables.\
+\
+\
+
+
+CUSTOMER FEEDBACK DATASET 
+
+```{r}
+
+
+# Dataset 3 Generation
+
+customer_feedback <- data.frame(
+  FeedbackID = 1:200,
+  PassengerID = sprintf("%d", sample(100:999, 200, replace = TRUE)),
+  FeedbackDate = sample(seq(as.Date('2020-01-01'), as.Date('2023-12-31'), by="day"), 
+                        200, replace = TRUE),
+  Category = sample(c("Service", "Cleanliness", "In-flight Entertainment", "Food Quality", "Comfort", "Punctuality", NA), 200, replace = TRUE),
+  Rating = round(rnorm(200, mean = 4.3, sd = 0.6), digits = 1) ,
+  Comments = sample(c("Very satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very dissatisfied", NA), 200, replace = TRUE)
+)
+
+# Introduce outliers in Ratings
+customer_feedback$Rating[sample(1:200, 5)] <- sample(6:10, 5, replace = TRUE)
+
+# Print the head of the dataset to see the first few entries
+print(head(customer_feedback))
+
+```
+
+The dataset containing customer feedback consists primarily of six variables: Feedback ID, Passenger ID, Feedback Date, Category, Rating, and Comments. To facilitate the easy creation of data, we have employed a function named generate_feedback_text. This function is designed to randomly produce comments that fall into one of the following categories: "Very satisfied," "Satisfied," "Neutral," "Dissatisfied," or "Very dissatisfied."
+
+
+The airline dataset and passenger dataset have the variable Flight number common as Flight number helps tracking the aircraft and the corresponsing passengers in the flight. Similiarly passenger dataset and customer feedback have the variable passenger ID in common for tracking the passenger travel and travel experience feedback. \
+
+
+## **Merging data sets **
+
+Since airline and passenger dataset have the variable "FlightNumber" , we merge the datset in Flight Number variable. Similarly the passenger and customer feedback datasets will be merged by Passenger ID variable. \
+
+Merging of dataset can be performed using varipus ways: join() and merge()\
+1. Join() - The join function has 4 types of joins that can be performed on the dataset. These are : inner join, full join, right join and left join. \
+Inner join - Retains only the common rows from the datasets 
+Full join - Keeps all rows from the dataset
+Right join - Joins rows matching to the right side of the dataset and stores 
+Left join - Joins rows matching to the left side of the dataset and stores 
+.
+
+```{r}
+
+# Merging datasets
+
+Flight_details <- inner_join(airline_data, passenger_data, by = "FlightNumber")
+Customer_details <- inner_join(passenger_data, customer_feedback, by="PassengerID" )
+
+head(Flight_details)
+head(Customer_details)
+
+```
+We have used inner_join as the merged datasets should pny contains the values that are common to the initial datasets. Using full_join will not be efficient as it will be unable to lead to desired outputs. \
+
+The merged datasets are stored in new dataframe namely : Flight Details and Customer details. \
+
+The flight details dataset contains 16 observations and 12 variables, referring to the instances where the airline data and passenger datasets shared common flight numbers. This dataset thus represents 16 distinct passengers who traveled with Qantas Airline to their respective destinations. This alignment of flight numbers across datasets indicates that the recorded details pertain specifically to these passengers. \
+
+
+The customer details dataset comprises of 13 observations, indicating that there were 13 passengers who traveled with Qantas Airlines and later provided feedback. Each of these passengers utilized the same passenger ID for their feedback submissions. This dataset serves as a full representation of passenger interactions and their travel experiences with the airline. \
+
+
+## **Checking structure of combined data ** 
+
+
+```{r}
+
+# Checking the structure of combined dataset
+
+str(Flight_details)
+
+str (Customer_details)
+
+```
+
+The structure of the combined datsets : Flight Details and Customer Details comprise of some data type mismatch and require data type conversion. \
+
+*Flight Details*\
+1. PassengerID variables needs to be converted to numeric from character 
+2. Ticket Class should be ordered factor as it contains categorical values with ranks. 
+\
+*Customer Details*\
+1. Similiar to Flight details dataset, the variable  PassengerID needs to be converted to Numeric values 
+2. The variable Comments and TicketClass should be ordered factor variables due to presence of categorical values with possible ranks. 
+
+```{r warning = FALSE}
+
+# Data type conversions 
+
+Flight_details$PassengerID <- as.numeric(Flight_details$PassengerID)
+Flight_details$TicketClass <- factor(Flight_details$TicketClass, 
+                                     levels = c("Economy", "Premium Economy", "Business", "First Class"), ordered = TRUE)
+
+
+Customer_details$PassengerID <- as.numeric(Customer_details$PassengerID)
+Customer_details$Comments <- factor(Customer_details$Comments, 
+                                    levels = c("Very satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very dissatisfied"), ordered = TRUE)
+Customer_details$TicketClass <- factor(Customer_details$TicketClass, 
+                                       levels = c("Economy", "Premium Economy", "Business", "First Class"), ordered = TRUE)
+
+str(Flight_details)
+str (Customer_details)
+
+
+```
+Both the datasets now have appropriate varaible data types being a mix of character, numeric and ordered factor. \. 
+
+For generating the summary statistics of dataset, we performed the following steps: 
+1. Identify a categorical variabel for grouping and a numeric variables for calculating summary statistics\
+2.Group the dataset by categircal variable using groupby() \
+3. Calculate descriptive values like mean, median, standard deviation, variance and quartiles.\
+
+For flight details datset, we shall group the data by TicketClass and for Customer Details, the grouping will be done on Comments variable. 
+
+## **Generate summary statistics**
+
+
+```{r}
+
+# Generate summary statistics
+
+summary_stats1 <- Flight_details %>%
+  group_by(TicketClass) %>%
+  summarise(
+    Mean_Age = mean(Age, na.rm = TRUE),
+    Median_Age = median(Age, na.rm = TRUE),
+    Q1_Age = quantile(Age, 0.25, na.rm = TRUE),
+    Q3_Age = quantile(Age, 0.75, na.rm = TRUE),
+    SD_Age = sd(Age, na.rm = TRUE),
+    .groups = 'drop' 
+  )
+
+# Print the summary statistics
+print(summary_stats1)
+
+summary_stats2 <- Customer_details %>%
+  group_by(Comments) %>%
+  summarise(
+    Mean_Rating = mean(Rating, na.rm = TRUE),
+    Median_Rating = median(Rating, na.rm = TRUE),
+    Q1_Rating = quantile(Rating, 0.25, na.rm = TRUE),
+    Q3_Rating = quantile(Rating, 0.75, na.rm = TRUE),
+    SD_Rating = sd(Rating, na.rm = TRUE),
+    .groups = 'drop'  
+  )
+
+summary_stats2
+
+```
+
+The summary statistics for Flight details tell us that : 
+1.Economy: The mean age of passengers in Economy class is 49 years, with a median age slightly lower at 47.5 years, indicating a younger age profile overall.\
+2. Premium Economy: This class has a higher mean age of 59.25 years and a much higher median age of 68.5 years, indicating a significant skew towards older passengers.\
+3. Business: Similar to Premium Economy, Business class shows a high mean age of 58.50 years and an even higher median age of 63 years.\
+4. First Class: Passengers in First Class have both a mean and median age of 58 years, indicating a symmetric age distribution centered around middle-aged passengers.\
+  
+  
+The summary statistics for Customer details dataset state that:\
+1. Satisfied: Shows a very narrow range in ratings (Q1 at 3.75 and Q3 at 4.05) with both the mean and median tightly clustered at 3.90, indicating a high level of consistency in satisfaction. \
+2. Neutral: Displays a significantly higher mean and median rating at 5.95, but with a much larger spread between Q1 (4.925) and Q3 (6.975) \
+3. Dissatisfied: Presents a narrow spread in ratings (Q1 at 4.3 and Q3 at 4.5), with the mean and median also tightly clustered at 4.4.\
+4. Very Dissatisfied: All values :  median, Q1, and Q3—are exactly 4.6, with an SD marked as NA
+
+
+## **Scanning data  **
+
+Scanning missing values in a dataset is a crucial step in data preprocessing, especially before conducting any form of data analysis or modeling. It helps in providing accurate analysis and better decision making using the data. 
+
+```{r}
+
+# Scan variables for missing values
+
+# function for missing value summary 
+summary_missing <- function(data) {
+  missing_summary <- data %>%
+    summarise(across(everything(), ~ sum(is.na(.))))
+  
+  return(missing_summary)
+}
+
+
+get_mode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+
+summary_missing(Flight_details)
+
+
+Flight_details <- Flight_details %>%
+  mutate(
+    Destination = replace_na(Destination, get_mode(Flight_details$Destination[!is.na(Flight_details$Destination)])),
+    AircraftType = replace_na(AircraftType, 
+get_mode(Flight_details$AircraftType[!is.na(Flight_details$AircraftType)]))
+)
+    
+summary_missing(Flight_details)
+
+summary_missing(Customer_details)
+
+Customer_details <- Customer_details %>% 
+  mutate(
+    Category = replace_na(Category, get_mode(Customer_details$Category[!is.na(Customer_details$Category)])),
+    Comments = replace_na(Comments, get_mode(Customer_details$Comments[!is.na(Customer_details$Comments)]))
+  )
+
+summary_missing(Customer_details)
+
+
+calculate_mean_median <- function(df) {
+  numeric_columns <- sapply(df, is.numeric) # Identify numeric columns
+  df_numeric <- df[, numeric_columns] # Filter only numeric columns
+
+  means <- apply(df_numeric, 2, mean, na.rm = TRUE) # Calculate means
+  medians <- apply(df_numeric, 2, median, na.rm = TRUE) # Calculate medians
+
+  results <- data.frame(Mean = means, Median = medians) # Combine into a dataframe
+  return(results)
+}
+
+```
+
+We have created a function Summary_missing which provides an entire summary of all the missing values across each variable in the dataset. 
+Using the function for scanning missing values, we get to know that in Flight details datset, the variable Destination is the most commonly missing values as compared to other. Whereas in Customer Details dataset, the Category of the comment given by the passenger is commmonly missing. \
+
+\
+
+For the imputation of missing categorical data, we use the Mode Method. This method involves replacing missing values in categorical variables with the mode, defined as the most frequently occurring value within the dataset. For calculting the mode of any varaible, we have generated a function get_mode which returns the mode value of all categorical data types\
+Specifically, within the "Flight Details" dataset, the summary_missing function has identified that the "Destination" variable contains missing entries. To address this, we have modified the dataset using the mutate function to replace all missing values in the "Destination" variable with its mode.\
+Similarly for the Customer details dataset, we identified that the variables "Category" and "Comments"  are missing hence we tend to replace the missing value by the mode of the Category variable. 
+  
+Another method of imputing categorical variable is by using the impute function(). The impute function replaces the missing value in a dataframe. For using the impute function in our analysis, we wpuld need to change the summary_missing function and re-write the code for checking missing value everytime, hence we preferred replace_na method.\ 
+\
+
+Additionally, a function calcualting the mean and median of the dataframe is also stated. For any missing numeric value, we should use mean or median of that variable to deal with missing values. 
+
+
+
+## **Link to presentation  **
+
+
+Link to presentation : 
+
+https://rmit-arc.instructuremedia.com/embed/cd58fc9e-a665-44b3-8b6a-6044a226739a
+
+
+The link for the presentation has been provided above. The presnetation covers the entire walk through of the steps undertaken to analyse the generated dateset of Qantas Airlines. The steps included are : \
+1. Introduction \
+2. Generation of synthetic datasets \ 
+3. Correlation variable \ 
+4. Merging of datasets \
+5. Structure of combined dataset \
+6. Summary statistics \
+7. Scanning and imputing missing values \
+
+
+\newpage
+## **References  **
+
+1.  Samuel Klett Navarro (2022) *Creating and pre-processing synthetic data* , RPubs by R Studio, accessed on 24 April 2024.
+https://rpubs.com/samkn/synthetic_data_creation
+
+2. Ramzi W. Nahhas (2021) *An Introduction to R in Research - Normal distribution* , Bookdown.org , accesed on 25th April 2024
+https://bookdown.org/rwnahhas/IntroToR/functions.html
+
+3. Martina Giron (2022) *How to Create a Custom Dataset in R* , Medium , accessed on 24th April 2024 
+https://towardsdatascience.com/how-to-create-a-custom-dataset-in-r-cf045e286656
+
+4. Shweta Dixit (2023) *Exploring Synthetic data in R* , Medium , accessed on 25th April 2024, 
+https://medium.com/@sdshwetadixit/exploring-synthetic-data-in-r-8834d4217865
+
+5. Rosita Mickeviciute (2023) *Types of airplanes and their functions: a civilian aircraft overview* Aerotime Hub, accessed on 26th April 2024
+https://www.aerotime.aero/articles/types-of-airplanes
+
+6. rare-phoenix (2024) *Generating Synthetic Data* , accessed on 24th April 2024
+http://rare-phoenix-161610.appspot.com/secured/demos/Generating-Synthetic-Data.html
+
+7. Data Preprocessing (Data Wrangling) *Module 5 - Scan: Missing Values* accessed on 25th April 2024, 
+http://rare-phoenix-161610.appspot.com/secured/Module_05.html#Overview
+
+8. Data Preprocessing (Data Wrangling) *Module 4 -Tidy Data Principles and Manipulating Data* accessed on 25th April 2024, 
+https://rare-phoenix-161610.appspot.com/secured/Module_04.html
+
+```{r}
+
+citation("magrittr")
+citation("dplyr")
+citation("tidyr")
+citation("knitr")
+
+```
+
+
