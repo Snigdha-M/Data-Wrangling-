@@ -1,0 +1,7 @@
+The aim of this report is to create authentic, practical data that reflects the everyday data usage of a global brand network. We will focus our detailed analysis on Qantas Airlines—short for Queensland and Northern Territory Aerial Services—which is a prominent Australian carrier known for its extensive fleet, international routes, and reach within Australia and Oceania.
+To facilitate our analysis, we will produce synthetic datasets for Qantas Airlines. This will enable us to derive and present valuable insights based on the results obtained.
+Synthetic data generation is a process of creating data having the characterstics of the real life data. The synthetically generated datasets further help in scenario testing, development, and understand the trends without hampering the actual data points.
+The datasets generated are for the analysis are :
+Airline Data: This dataset includes key elements such as flight numbers, types of aircraft and departure schedules among others. This information is crucial for simulating the logistical and operational aspects of the airline.
+Passenger Data: This dataset provides information on passengers traveling with Qantas Airlines, detailing demograohics, ticket class, and other relevant passenger-specific information.
+Customer Feedback: This dataset gathers insights from passengers about their experiences with Qantas Airlines, which is essential for understanding customer satisfaction and areas of improvement.
